@@ -22,6 +22,7 @@ class MainWindow(Video: VideoWindow) : JFrame() {
     private val mainPanel: GraphicsPanel
     internal val fp: FractalPainter
     internal val plane:  CartesianScreenPlane
+    internal val plane1:  CartesianScreenPlane
     internal var updated: Boolean = false
     private val fractal = Mandelbrot()
 
@@ -70,6 +71,11 @@ class MainWindow(Video: VideoWindow) : JFrame() {
             -2.0, 1.0, -1.0, 1.0
         )
 
+        plane1 = CartesianScreenPlane(
+                mainPanel.width, mainPanel.height,
+                0.0, 0.0, 0.0, 0.0
+        )
+
 
         val mfp = SelectionFramePainter(mainPanel.graphics)
         val fractal = Mandelbrot()
@@ -82,8 +88,32 @@ class MainWindow(Video: VideoWindow) : JFrame() {
 
         with (mainPanel){
             background = Color.WHITE
+            val wM = mainPanel.width
+            val hM = mainPanel.height
+            ResetCoords()
             addComponentListener(object : ComponentAdapter() {
                 override fun componentResized(e: ComponentEvent?) {
+                    val wT = mainPanel.width.toFloat()/wM.toFloat()
+                    val hT = mainPanel.height.toFloat()/hM.toFloat()
+                    val te = wT/hT
+                    if (wT<1||hT<1) {
+                        if (mainPanel.width.toFloat()/mainPanel.height.toFloat()>= 1) {
+                            plane.yMin = plane1.yMin
+                            plane.yMax = plane1.yMax
+                            plane.xMin = plane1.xMin-Math.abs((1-te)*(plane1.xMax-plane1.xMin)/2)
+                            plane.xMax = plane1.xMax+Math.abs((1-te)*(plane1.xMax-plane1.xMin)/2)
+                        } else {
+                            plane.xMin = plane1.xMin
+                            plane.xMax = plane1.xMax
+                            plane.yMax = plane1.yMax+Math.abs((1/te-1)*(plane1.yMax-plane1.yMin)/2)
+                            plane.yMin = plane1.yMin-Math.abs((1/te-1)*(plane1.yMax-plane1.yMin)/2)
+                        }
+                    } else {
+                        plane.xMin = plane1.xMin-(wT-1)*(plane1.xMax-plane1.xMin)/2
+                        plane.xMax = plane1.xMax+(wT-1)*(plane1.xMax-plane1.xMin)/2
+                        plane.yMin = plane1.yMin-(hT-1)*(plane1.yMax-plane1.yMin)/2
+                        plane.yMax = plane1.yMax+(hT-1)*(plane1.yMax-plane1.yMin)/2
+                    }
                     plane.realWidth = mainPanel.width
                     plane.realHeight = mainPanel.height
                     mfp.g = mainPanel.graphics
@@ -118,6 +148,21 @@ class MainWindow(Video: VideoWindow) : JFrame() {
                                     val xMax = Converter.xScr2Crt(x + width, plane)
                                     val yMin = Converter.yScr2Crt(y + height, plane)
                                     val yMax = Converter.yScr2Crt(y, plane)
+                                    val xT =  xMax - xMin;
+                                    val yT = yMax - yMin;
+                                    val te = plane.height/plane.width;
+                                    if (xT*te>yT){
+                                        plane.xMin = xMin;
+                                        plane.xMax = xMin+xT;
+                                        plane.yMin = yMin-Math.abs(xT*te-yT)/2
+                                        plane.yMax = yMin+xT*te-Math.abs(xT*te-yT)/2
+                                    }
+                                    else{
+                                        plane.yMin = yMin;
+                                        plane.yMax = yMin+yT;
+                                        plane.xMin = xMin - Math.abs((yT/te-xT)/2);
+                                        plane.xMax = xMin+yT/te-Math.abs((yT/te-xT)/2);
+                                    }
                                     val new = Coords(xMin, xMax, yMin, yMax)
                                     if (updated) {
                                         fractal.updateMaxIterations(new, old)  //добавить флажок с менюшниками
@@ -147,12 +192,32 @@ class MainWindow(Video: VideoWindow) : JFrame() {
         }
     }
 
+    fun ResetCoords(){
+        plane1.xMax = plane.xMax
+        plane1.xMin = plane.xMin
+        plane1.yMax = plane.yMax
+        plane1.yMin = plane.yMin
+    }
+
     fun updatePlane(xMin: Double, xMax: Double, yMin: Double, yMax: Double) {
         plane.also {
-            it.xMin = xMin
-            it.xMax = xMax
-            it.yMin = yMin
-            it.yMax = yMax
+            var yI=yMin;var yA=yMax;var xI=xMin;var xA=xMax;
+            val xT=xA-xI;
+            val yT=yA-yI;
+            val te = mainPanel.width/mainPanel.height;
+            if(xT/te>yT){
+                yA=((1/te)*xT+yMin+yMax)/2;
+                yI=(yMin+yMax-(1/te)*xT)/2;
+            }
+            else{
+                xA=(te*yT+xMin+xMax)/2;
+                xI=(xMin+xMax-te*yT)/2;
+            }
+            it.xMin = xI
+            it.xMax = xA
+            it.yMin = yI
+            it.yMax = yA
+            ResetCoords()
         }
         video.videoPanel.plane.also {
             it.xMin = xMin
