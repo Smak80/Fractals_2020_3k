@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="Complex:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Complex_jar</output-path>
+    <root id="archive" name="Complex.jar">
+      <element id="module-output" name="Complex" />
+      <element id="library" level="project" name="KotlinJavaRuntime" />
+    </root>
+  </artifact>
+</component>
