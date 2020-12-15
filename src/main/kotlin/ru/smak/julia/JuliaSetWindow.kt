@@ -62,6 +62,7 @@ class JuliaSetWindow  {
             glfwTerminate()
             glfwSetErrorCallback(null)?.free()
             isLaunchedAtomic.set(false)
+            glCapabilitiesCreated = false
         }
     }
 
